@@ -1,0 +1,12 @@
+{
+  "fileLocations": [
+      {
+          "URIs": [
+              "arn:aws:s3:::cloudtrail-eventbridge-example/demo-trail/AWSLogs/093879445146/CloudTrail/us-east-1/2024/11/04/"
+          ]
+      }
+  ],
+  "globalUploadSettings": {
+      "format": "JSON"
+  }
+}
