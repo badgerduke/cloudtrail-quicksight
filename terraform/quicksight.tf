@@ -1,5 +1,12 @@
 locals {
-  demo-analysis-columns = ["eventtime", "eventname", "useridentity", "requestparameters"]
+  demo-analysis-columns = ["eventtime", "eventname", "username", "requestparameters"]
+  calculated-columns = [
+    {
+      column_id: "username",
+      column_name: "username"
+      expression: "{useridentity.username}"
+    }
+  ]
 }
 
 
@@ -39,7 +46,7 @@ resource "aws_quicksight_data_source" "athena_data_source" {
 resource "aws_quicksight_data_set" "demo_quicksight_dataset" {
   data_set_id = "demo_quicksight_dataset"
   name        = "demo_quicksight_dataset"
-  import_mode = "SPICE"
+  import_mode = "DIRECT_QUERY"
 
   physical_table_map {
     physical_table_map_id = "demo-quicksight-physical-table"
@@ -60,13 +67,18 @@ resource "aws_quicksight_data_set" "demo_quicksight_dataset" {
 
       input_columns {
         name = "useridentity"
-        type = "JSON"
+        type = "STRING"
       }
 
       input_columns {
         name = "requestparameters"
         type = "JSON"
       }
+    }
+    custom_sql {
+      data_source_arn = aws_quicksight_data_source.athena_data_source.arn
+      name = "Custom SQL"
+      sql_query = "SELECT eventtime, eventname, useridentity, requestparameters FROM demo_athena_database.demo_athena_table"
     }
   }
 
@@ -79,15 +91,15 @@ resource "aws_quicksight_data_set" "demo_quicksight_dataset" {
           "eventtime",
           "eventname",
           "username",
-          "useridentity",
           "requestparameters"
         ]
       }
+
       create_columns_operation {
         columns {
           column_id = "username"
           column_name = "username"
-          expression = "{useridentity.username}"
+          expression = "parseJson({useridentity}, \"$.sessioncontext.sessionissuer.username\")"
         }
       }
     } 

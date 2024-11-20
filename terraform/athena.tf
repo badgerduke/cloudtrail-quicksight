@@ -59,16 +59,14 @@ resource "aws_glue_catalog_table" "cloudtrail" {
       name = "requestparameters"
       type = "string"
     }
+    # to convert struct to json, use string here and org.openx.data.jsonserde.JsonSerDe in ser_de_info
     columns {
       name = "useridentity"
-      type = "struct<type:string,principalId:string,arn:string,accountId:string,invokedBy:string,accessKeyId:string,userName:string,sessionContext:struct<attributes:struct<mfaAuthenticated:string,creationDate:string>,sessionIssuer:struct<type:string,principalId:string,arn:string,accountId:string,userName:string>>>"
+      type = "string"
     }
 
     ser_de_info {
-      parameters = {
-        "serialization.format" = "1"
-      }
-      serialization_library = "com.amazon.emr.hive.serde.CloudTrailSerde"
+      serialization_library = "org.openx.data.jsonserde.JsonSerDe"
     }
 
     skewed_info {
