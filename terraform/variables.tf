@@ -47,3 +47,8 @@ variable "quicksight_username" {
  type = string
  description = "The Quicksight user name"
 }
+
+variable "quicksight_username_path" {
+ type = string
+ description = "The JSON path within useridentity for username"
+}

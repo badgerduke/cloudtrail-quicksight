@@ -9,7 +9,6 @@ resource "aws_athena_workgroup" "example" {
       encryption_configuration {
         encryption_option = "SSE_S3"
       }
-
       output_location = "s3://${aws_s3_bucket.athena_results_bucket.bucket}/"
     }
   }
@@ -19,7 +18,6 @@ resource "aws_s3_bucket" "athena_results_bucket" {
   bucket        = "${var.athena_results_bucket}"
   force_destroy = true
 }
-
 
 
 resource "aws_athena_database" "athena_database" {
@@ -68,12 +66,6 @@ resource "aws_glue_catalog_table" "cloudtrail" {
     ser_de_info {
       serialization_library = "org.openx.data.jsonserde.JsonSerDe"
     }
-
-    skewed_info {
-      skewed_column_names               = []
-      skewed_column_value_location_maps = {}
-      skewed_column_values              = []
-    }
   }
 }
 
@@ -100,5 +92,3 @@ data "aws_iam_policy_document" "bucket_policy_athena_results" {
     ]
   }
 }
-
-// https://stackoverflow.com/questions/56289272/create-aws-athena-view-programmatically

@@ -1,12 +1,5 @@
 locals {
   demo-analysis-columns = ["eventtime", "eventname", "username", "requestparameters"]
-  calculated-columns = [
-    {
-      column_id: "username",
-      column_name: "username"
-      expression: "{useridentity.username}"
-    }
-  ]
 }
 
 
@@ -50,62 +43,31 @@ resource "aws_quicksight_data_set" "demo_quicksight_dataset" {
 
   physical_table_map {
     physical_table_map_id = "demo-quicksight-physical-table"
-    relational_table {
-      data_source_arn = aws_quicksight_data_source.athena_data_source.arn
-      schema          = aws_athena_database.athena_database.name
-      name            = aws_glue_catalog_table.cloudtrail.name
 
-      input_columns {
-        name = "eventtime"
-        type = "STRING"
-      }
-
-      input_columns {
-        name = "eventname"
-        type = "STRING"
-      }
-
-      input_columns {
-        name = "useridentity"
-        type = "STRING"
-      }
-
-      input_columns {
-        name = "requestparameters"
-        type = "JSON"
-      }
-    }
     custom_sql {
       data_source_arn = aws_quicksight_data_source.athena_data_source.arn
       name = "Custom SQL"
-      sql_query = "SELECT eventtime, eventname, useridentity, requestparameters FROM demo_athena_database.demo_athena_table"
-    }
-  }
+      sql_query = "SELECT eventtime, eventname, useridentity, requestparameters FROM demo_athena_database.demo_athena_table WHERE eventname = '${var.cloudtrail_event_name}'"
 
-  logical_table_map {
-    logical_table_map_id = "logical-table-id"
-    alias                = aws_glue_catalog_table.cloudtrail.name
-    data_transforms {
-      project_operation {
-        projected_columns = [
-          "eventtime",
-          "eventname",
-          "username",
-          "requestparameters"
-        ]
+      columns {
+        type = "STRING"
+        name = "eventtime"
       }
 
-      create_columns_operation {
-        columns {
-          column_id = "username"
-          column_name = "username"
-          expression = "parseJson({useridentity}, \"$.sessioncontext.sessionissuer.username\")"
-        }
+      columns {
+        type = "STRING"
+        name = "eventname"
       }
-    } 
 
-    source {
-        physical_table_id  = "demo-quicksight-physical-table"
+      columns {
+        type = "STRING"
+        name = "useridentity"
+      }
+
+     columns {
+        type = "STRING"
+        name = "requestparameters"
+      }     
     }
   }
 
@@ -129,13 +91,18 @@ resource "aws_quicksight_data_set" "demo_quicksight_dataset" {
 }
 
 
-resource "aws_quicksight_analysis" "example" {
+resource "aws_quicksight_analysis" "demo_analysis" {
   analysis_id = "demo-analysis-id"
   name        = "demo-analysis"
   definition {
     data_set_identifiers_declarations {
       data_set_arn = aws_quicksight_data_set.demo_quicksight_dataset.arn
       identifier   = aws_quicksight_data_set.demo_quicksight_dataset.name
+    }
+    calculated_fields {
+      data_set_identifier = aws_quicksight_data_set.demo_quicksight_dataset.data_set_id
+      name = "username"
+      expression = "parseJson({useridentity}, \"${var.quicksight_username_path}\")"
     }
     sheets {
       title    = "Demo Sheet"
@@ -145,7 +112,7 @@ resource "aws_quicksight_analysis" "example" {
           visual_id = "demo-table-visual"
           title {
             format_text {
-              plain_text = "Line Chart Example"
+              plain_text = "Demo Sheet"
             }
           }
           chart_configuration {
@@ -176,6 +143,70 @@ resource "aws_quicksight_analysis" "example" {
                "quicksight:DescribeAnalysisPermissions", 
                "quicksight:DescribeAnalysis", 
                "quicksight:UpdateAnalysis"]
+    principal = data.aws_quicksight_user.demo.arn
+  }
+}
+
+resource "aws_quicksight_template" "demo_template" {
+  template_id         = "demo-template-id"
+  name                = "demo-template-name"
+  version_description = "version"
+
+  source_entity {
+    source_analysis {
+      arn = aws_quicksight_analysis.demo_analysis.arn
+      data_set_references {
+        data_set_arn = aws_quicksight_data_set.demo_quicksight_dataset.arn
+        data_set_placeholder = "Data Set Placeholder"
+      }
+    }
+  }
+
+  permissions {
+    actions = [
+      "quicksight:UpdateTemplatePermissions", 
+      "quicksight:DescribeTemplatePermissions",
+      "quicksight:UpdateTemplateAlias", 
+      "quicksight:DeleteTemplateAlias", 
+      "quicksight:DescribeTemplateAlias", 
+      "quicksight:ListTemplateAliases", 
+      "quicksight:ListTemplates", 
+      "quicksight:CreateTemplateAlias", 
+      "quicksight:DeleteTemplate", 
+      "quicksight:UpdateTemplate", 
+      "quicksight:ListTemplateVersions", 
+      "quicksight:DescribeTemplate", 
+      "quicksight:CreateTemplate"
+    ]
+    principal = data.aws_quicksight_user.demo.arn
+  }
+}
+
+resource "aws_quicksight_dashboard" "demo_dashboard" {
+  dashboard_id        = "demo-dashboard-id"
+  name                = "demo-dashboard-name"
+  version_description = "version"
+  source_entity {
+    source_template {
+      arn = aws_quicksight_template.demo_template.arn
+      data_set_references {
+        data_set_arn = aws_quicksight_data_set.demo_quicksight_dataset.arn
+        data_set_placeholder = "Data Set Placeholder"
+      }
+    }
+  }
+
+  permissions {
+    actions = [
+      "quicksight:DescribeDashboard", 
+      "quicksight:ListDashboardVersions", 
+      "quicksight:UpdateDashboardPermissions", 
+      "quicksight:QueryDashboard", 
+      "quicksight:UpdateDashboard", 
+      "quicksight:DeleteDashboard", 
+      "quicksight:UpdateDashboardPublishedVersion", 
+      "quicksight:DescribeDashboardPermissions"
+    ]
     principal = data.aws_quicksight_user.demo.arn
   }
 }
