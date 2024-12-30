@@ -26,7 +26,7 @@ athena_database_name = "demo_athena_database"
 athena_table_name = "demo_athena_table"
 
 # The Quicksight user name
-quicksight_username = ""
+quicksight_username = "<your_user>"
 
 # The JSON path within useridentity field for username (this will vary for different event names)
 quicksight_username_path = "$.username"
