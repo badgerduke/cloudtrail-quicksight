@@ -9,4 +9,4 @@ To run successfully, you must have a QuickSight account.  This will cost some mo
 
 ![architecture diagram](cloudtrail-quicksight.png "Architecture")
 
-m
+![quicksight dashboard](quicksight-dashboard.png "Quicksight Dashboard")
